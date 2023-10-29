@@ -1,0 +1,88 @@
+---
+title: "Basic Mapping Assignment"
+author: "Jacob Wyco"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: TRUE
+    self_contained: TRUE
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r packages}
+pacman::p_load("leaflet","OpenStreetMap","sf","tidyverse")
+library(rJava)
+```
+
+```{r data}
+state <- map_data("state")
+county <- map_data("county")
+EM_point <- data.frame("x" = -87.36149, "y" = 36.53967)
+```
+
+```{r mapSimple Map Filtered Data, message=FALSE, warning=FALSE}
+tn <- county %>% 
+  filter(region=="tennessee")
+
+montco <- county %>% 
+  filter(region=="tennessee") %>% 
+  filter(subregion=="montgomery")
+```
+
+```{r GGMap}
+ggplot() + geom_polygon(data = state, aes(x=long, y = lat, group = group),
+                        fill = "white", color="black") + 
+           geom_polygon(data = tn, aes(x=long, y = lat, group = group),
+                        fill = "gray", color="black") + 
+           geom_polygon(data = montco, aes(x=long, y = lat, group = group),
+                        fill = "red", color="black") + 
+           geom_point(data = EM_point, aes(x=x,y=y), color="black") +
+  coord_fixed(xlim = c(-91, -81),  ylim = c(34, 37), ratio = 1.2) + 
+  xlab("Longitude") + ylab("Latitude") + ggtitle("Emerald Hill, Montgomery Co., TN")
+
+```
+
+```{r esri-topo, echo=FALSE}
+Net_points <- read.csv("Nets.csv")
+
+testmap <- openmap(c(36.542,-87.358),
+                     c(36.5385,-87.362), type="esri-topo", mergeTiles=TRUE)
+AP <- openproj(testmap, projection = "+proj=longlat +ellps=WGS84 +units=m +no_defs")
+autoplot.OpenStreetMap(AP) +
+  geom_point(data=Net_points, aes(x = X, y = Y, color=Name), size = 4, alpha = 0.8) +
+  geom_text(data=Net_points,aes(x=X,y=Y,label=Name), color="white", vjust=-0.60, size=4.01, fontface="bold") +
+  geom_text(data=Net_points,aes(x=X,y=Y,label=Name), color="black", vjust=-0.75, fontface="bold") +
+  labs(x="Longtiude", y="Latitude") + theme(legend.position = "none")
+
+```
+
+```{r osm, echo=FALSE}
+Net_points <- read.csv("Nets.csv")
+
+testmap <- openmap(c(36.542,-87.358),
+                     c(36.5385,-87.362), type="osm", mergeTiles=TRUE)
+AP <- openproj(testmap, projection = "+proj=longlat +ellps=WGS84 +units=m +no_defs")
+autoplot.OpenStreetMap(AP) +
+  geom_point(data=Net_points, aes(x = X, y = Y, color=Name), size = 4, alpha = 0.8) +
+  geom_text(data=Net_points,aes(x=X,y=Y,label=Name), color="white", vjust=-0.60, size=4.01, fontface="bold") +
+  geom_text(data=Net_points,aes(x=X,y=Y,label=Name), color="black", vjust=-0.75, fontface="bold") +
+  labs(x="Longtiude", y="Latitude") + theme(legend.position = "none")
+
+```
+
+
+
+
+```{r interactive, echo=FALSE}
+leaflet() %>%
+  setView(lat = 36.53967, lng = -87.36149, zoom = 8) %>% #lat-long of the place of interest
+  addTiles() %>%
+  addMarkers(lat = 36.53967, lng = -87.36149, popup = "Pace Alumni Center") %>%
+   addMarkers(lat = 36.5399, lng = -87.3602, popup = "Net1") %>%
+  addMarkers(lat = 36.5391, lng = -87.3597, popup = "Net2") 
+             
+
+```
